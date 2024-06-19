@@ -85,42 +85,6 @@ dataset/
 
 ### 4. Preprocess the Data
 Create a Python script named `preprocess_data.py` to preprocess your images.
-```python
-import cv2
-import numpy as np
-from sklearn.model_selection import train_test_split
-import os
-
-def preprocess_images(image_dir, image_size=(64, 64)):
-    images = []
-    labels = []
-    label_names = os.listdir(image_dir)
-    label_dict = {label: idx for idx, label in enumerate(label_names)}
-    
-    for label in label_names:
-        image_files = os.listdir(os.path.join(image_dir, label))
-        for image_file in image_files:
-            image_path = os.path.join(image_dir, label, image_file)
-            image = cv2.imread(image_path)
-            image = cv2.resize(image, image_size)
-            images.append(image)
-            labels.append(label_dict[label])
-    
-    images = np.array(images) / 255.0
-    labels = np.array(labels)
-    return images, labels, label_dict
-
-image_dir = 'dataset'
-images, labels, label_dict = preprocess_images(image_dir)
-
-X_train, X_test, y_train, y_test = train_test_split(images, labels, test_size=0.2, random_state=42)
-
-np.save('X_train.npy', X_train)
-np.save('X_test.npy', X_test)
-np.save('y_train.npy', y_train)
-np.save('y_test.npy', y_test)
-np.save('label_dict.npy', label_dict)
-```
 Run the script to preprocess the data:
 ```bash
 python preprocess_data.py
@@ -128,40 +92,6 @@ python preprocess_data.py
 
 ### 5. Train the Model
 Create a Python script named `train_model.py` to train your CNN model.
-```python
-import tensorflow as tf
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
-import numpy as np
-
-def create_cnn_model(input_shape, num_classes):
-    model = Sequential([
-        Conv2D(32, (3, 3), activation='relu', input_shape=input_shape),
-        MaxPooling2D((2, 2)),
-        Conv2D(64, (3, 3), activation='relu'),
-        MaxPooling2D((2, 2)),
-        Flatten(),
-        Dense(128, activation='relu'),
-        Dropout(0.5),
-        Dense(num_classes, activation='softmax')
-    ])
-    model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-    return model
-
-X_train = np.load('X_train.npy')
-y_train = np.load('y_train.npy')
-X_test = np.load('X_test.npy')
-y_test = np.load('y_test.npy')
-label_dict = np.load('label_dict.npy', allow_pickle=True).item()
-
-input_shape = (64, 64, 3)
-num_classes = len(label_dict)
-model = create_cnn_model(input_shape, num_classes)
-
-history = model.fit(X_train, y_train, epochs=20, validation_split=0.2, batch_size=32)
-
-model.save('gesture_model.h5')
-```
 Run the script to train the model:
 ```bash
 python train_model.py
@@ -169,17 +99,6 @@ python train_model.py
 
 ### 6. Evaluate the Model
 Create a Python script named `evaluate_model.py` to evaluate the model's performance.
-```python
-import tensorflow as tf
-import numpy as np
-
-model = tf.keras.models.load_model('gesture_model.h5')
-X_test = np.load('X_test.npy')
-y_test = np.load('y_test.npy')
-
-test_loss, test_accuracy = model.evaluate(X_test, y_test)
-print(f'Test accuracy: {test_accuracy}')
-```
 Run the script to evaluate the model:
 ```bash
 python evaluate_model.py
@@ -187,27 +106,6 @@ python evaluate_model.py
 
 ### 7. Predict Hand Gestures
 Create a Python script named `predict_gesture.py` to use the trained model to predict hand gestures from new images.
-```python
-import tensorflow as tf
-import cv2
-import numpy as np
-
-def predict_gesture(model, image_path, label_dict):
-    image = cv2.imread(image_path)
-    image = cv2.resize(image, (64, 64))
-    image = np.expand_dims(image, axis=0) / 255.0
-    prediction = model.predict(image)
-    return np.argmax(prediction), label_dict
-
-model = tf.keras.models.load_model('gesture_model.h5')
-label_dict = np.load('label_dict.npy', allow_pickle=True).item()
-inverse_label_dict = {v: k for k, v in label_dict.items()}
-
-# Example prediction
-image_path = 'path/to/new/image.jpg'
-predicted_label, _ = predict_gesture(model, image_path, inverse_label_dict)
-print(f'Predicted gesture: {inverse_label_dict[predicted_label]}')
-```
 Run the script to predict a gesture:
 ```bash
 python predict_gesture.py
@@ -215,98 +113,8 @@ python predict_gesture.py
 
 By following these steps, you can set up, train, evaluate, and use your hand gesture recognition model. Adjust the paths and parameters as needed for your specific dataset and requirements.
 
-
-
-
 Here's a single script that combines all the steps to preprocess the data, train the model, evaluate the model, and make predictions. Save this script as `run_hand_gesture_recognition.py`.
 
-```python
-import os
-import cv2
-import numpy as np
-import tensorflow as tf
-from sklearn.model_selection import train_test_split
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
-
-def preprocess_images(image_dir, image_size=(64, 64)):
-    images = []
-    labels = []
-    label_names = os.listdir(image_dir)
-    label_dict = {label: idx for idx, label in enumerate(label_names)}
-    
-    for label in label_names:
-        image_files = os.listdir(os.path.join(image_dir, label))
-        for image_file in image_files:
-            image_path = os.path.join(image_dir, label, image_file)
-            image = cv2.imread(image_path)
-            image = cv2.resize(image, image_size)
-            images.append(image)
-            labels.append(label_dict[label])
-    
-    images = np.array(images) / 255.0
-    labels = np.array(labels)
-    return images, labels, label_dict
-
-def create_cnn_model(input_shape, num_classes):
-    model = Sequential([
-        Conv2D(32, (3, 3), activation='relu', input_shape=input_shape),
-        MaxPooling2D((2, 2)),
-        Conv2D(64, (3, 3), activation='relu'),
-        MaxPooling2D((2, 2)),
-        Flatten(),
-        Dense(128, activation='relu'),
-        Dropout(0.5),
-        Dense(num_classes, activation='softmax')
-    ])
-    model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-    return model
-
-def train_model(X_train, y_train, input_shape, num_classes):
-    model = create_cnn_model(input_shape, num_classes)
-    model.fit(X_train, y_train, epochs=20, validation_split=0.2, batch_size=32)
-    model.save('gesture_model.h5')
-    return model
-
-def evaluate_model(model, X_test, y_test):
-    test_loss, test_accuracy = model.evaluate(X_test, y_test)
-    print(f'Test accuracy: {test_accuracy}')
-
-def predict_gesture(model, image_path, label_dict):
-    image = cv2.imread(image_path)
-    image = cv2.resize(image, (64, 64))
-    image = np.expand_dims(image, axis=0) / 255.0
-    prediction = model.predict(image)
-    return np.argmax(prediction), label_dict
-
-def main():
-    # Set the image directory
-    image_dir = 'dataset'
-    
-    # Preprocess the data
-    print("Preprocessing the data...")
-    images, labels, label_dict = preprocess_images(image_dir)
-    X_train, X_test, y_train, y_test = train_test_split(images, labels, test_size=0.2, random_state=42)
-    
-    # Train the model
-    print("Training the model...")
-    input_shape = (64, 64, 3)
-    num_classes = len(label_dict)
-    model = train_model(X_train, y_train, input_shape, num_classes)
-    
-    # Evaluate the model
-    print("Evaluating the model...")
-    evaluate_model(model, X_test, y_test)
-    
-    # Predict a gesture
-    print("Predicting a gesture...")
-    image_path = 'path/to/new/image.jpg'  # Replace with the path to your image
-    predicted_label, _ = predict_gesture(model, image_path, {v: k for k, v in label_dict.items()})
-    print(f'Predicted gesture: {predicted_label}')
-
-if __name__ == "__main__":
-    main()
-```
 
 ### Instructions to Run the Script
 
@@ -335,3 +143,16 @@ if __name__ == "__main__":
     ```
 
 Replace `path/to/new/image.jpg` with the actual path to an image you want to use for prediction. This script will preprocess the data, train the model, evaluate it, and make a prediction, all in one go.
+
+**4.Link to Dataset: https://www.kaggle.com/datasets/gti-upm/leapgestrecog/code**
+You can download the hand gesture recognition dataset from Kaggle using this [link](https://www.kaggle.com/datasets/gti-upm/leapgestrecog/code).
+
+Here's how to integrate it into your hand gesture recognition project:
+
+### Step-by-Step Guide
+
+**Download the Dataset**:
+   Download the dataset from Kaggle and unzip it to a directory named `dataset`.
+
+Wish You all the Best,
+Manish Dhatrak
